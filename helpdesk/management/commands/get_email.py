@@ -193,15 +193,19 @@ def process_queue(q, logger):
             msgNum = msg.split(" ")[0]
             logger.info("Processing message %s" % msgNum)
 
-            if six.PY2:
-                full_message = encoding.force_text("\n".join(server.retr(msgNum)[1]), errors='replace')
-            else:
+            ticket = None
+            try:
                 raw_content = server.retr(msgNum)[1]
-                if type(raw_content[0]) is bytes:
-                    full_message = "\n".join([elm.decode('utf-8', "replace") for elm in raw_content])
-                else:
+                if six.PY2:
                     full_message = encoding.force_text("\n".join(raw_content), errors='replace')
-            ticket = ticket_from_message(message=full_message, queue=q, logger=logger)
+                else:
+                    if type(raw_content[0]) is bytes:
+                        full_message = "\n".join([elm.decode('utf-8', "replace") for elm in raw_content])
+                    else:
+                        full_message = encoding.force_text("\n".join(raw_content), errors='replace')
+                ticket = ticket_from_message(message=full_message, queue=q, logger=logger)
+            except poplib.error_proto as e:
+                logger.error("POP3 error retrieving message %s: %s" % (msgNum, e))
 
             if ticket:
                 server.dele(msgNum)
