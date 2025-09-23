@@ -11,6 +11,7 @@ docs/doctrees/*
 .pydevproject
 .directory
 logging/*.log
+build/
 
 # ignore demo attachments that user might have added
 helpdesk/attachments/

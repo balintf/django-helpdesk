@@ -46,6 +46,9 @@ from helpdesk.models import Queue, Ticket, TicketCC, FollowUp, IgnoreEmail
 
 import logging
 
+# Increase poplib line length limit from default 2048 to 100K to allow for larger email messages
+poplib._MAXLINE = 100*1024
+
 User = get_user_model()
 
 
