@@ -320,6 +320,14 @@ def decode_mail_headers(string):
     elif six.PY3:
         return u' '.join([str(msg, encoding=charset, errors='replace') if charset else str(msg) for msg, charset in decoded])
 
+def normalize_email(email_address):
+    email_address = email_address.strip().lower()
+    if "@" not in email_address:
+        return email_address
+    local, domain = email_address.split("@", 1)
+    # For Gmail addresses, ignore dots and anything after a plus sign in the local part
+    local = local.split("+", 1)[0].replace(".", "")
+    return f"{local}@{domain}"
 
 def ticket_from_message(message, queue, logger):
     # 'message' must be an RFC822 formatted message.
@@ -463,10 +471,10 @@ def ticket_from_message(message, queue, logger):
         if not user_of_sender_email:
             logger.warn("Refused to create ticket for non-registered email %s" % sender_email)
             # Transform email addresses, removing '+' and '.' to avoid issues with email aliases
-            sender_filtered = sender_email.replace('+', '').replace('.', '')
-            from_filtered = queue.from_address.replace('+', '').replace('.', '')
+            sender_filtered = normalize_email(email.utils.parseaddr(sender_email)[1])
+            from_filtered = normalize_email(email.utils.parseaddr(queue.from_address)[1])
             logger.info("Filtered sender email: %s, Filtered queue from address: %s" % (sender_filtered, from_filtered))
-            if sender_filtered.lower() == from_filtered.lower():
+            if sender_filtered == from_filtered:
                 # don't send email if it's the no-reply address
                 logger.info("Sender was the queue no-reply address %s, so not sending non-ticket email %s" % (queue.from_address, sender_email))
                 return True
