@@ -462,6 +462,13 @@ def ticket_from_message(message, queue, logger):
         # If sender_email does not exist in Users, do not create a ticket, but send an email.
         if not user_of_sender_email:
             logger.warn("Refused to create ticket for non-registered email %s" % sender_email)
+            # Transform email addresses, removing '+' and '.' to avoid issues with email aliases
+            sender_filtered = sender_email.replace('+', '').replace('.', '')
+            from_filtered = queue.from_address.replace('+', '').replace('.', '')
+            if sender_filtered.lower() == from_filtered.lower():
+                # don't send email if it's the no-reply address
+                logger.info("Sender was the queue no-reply address %s, so not sending non-ticket email %s" % (queue.from_address, sender_email))
+                return True
             send_templated_mail(
                 'noticket_submitter',
                 context={'queue': queue_template_context(queue)},
