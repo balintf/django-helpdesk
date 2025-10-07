@@ -8,6 +8,7 @@ views/staff.py - The bulk of the application - provides most business logic and
 """
 from __future__ import unicode_literals
 from datetime import date, datetime, timedelta
+import logging
 import re
 
 from django import VERSION as DJANGO_VERSION
@@ -589,6 +590,9 @@ def update_ticket(request, ticket_id, public=False):
         history_text=get_followup_history_text(ticket, format="text"),
     )
 
+    logger = logging.getLogger('helpdesk')
+    logger.debug('update_ticket: ticket=%s, public=%s, comment=%s, new_status=%s, title=%s, owner=%s, priority=%s, due_date=%s',
+                 ticket.id, public, comment, new_status, title, owner, priority, due_date)
     if public and (f.comment or (
         f.new_status in (Ticket.RESOLVED_STATUS,
                          Ticket.CLOSED_STATUS))):
@@ -601,6 +605,7 @@ def update_ticket(request, ticket_id, public=False):
 
         template_suffix = 'submitter'
 
+        logger.debug('update_ticket: sending email to submitter %s is_staff=%s', ticket.submitter_email, request.user.is_staff)
         if ticket.submitter_email and request.user.is_staff:
             send_templated_mail(
                 template + template_suffix,

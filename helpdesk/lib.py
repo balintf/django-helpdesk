@@ -33,7 +33,11 @@ from django.utils.safestring import mark_safe
 from helpdesk.models import Attachment, EmailTemplate
 
 logger = logging.getLogger('helpdesk')
+logger.setLevel(logging.DEBUG)
 
+handler = logging.handlers.SysLogHandler(address = '/dev/log')
+logger.addHandler(handler)
+logger.info('Starting django-helpdesk lib.py')
 
 def send_templated_mail(template_name,
                         context,
@@ -77,6 +81,8 @@ def send_templated_mail(template_name,
         HELPDESK_EMAIL_FALLBACK_LOCALE
 
     locale = context['queue'].get('locale') or HELPDESK_EMAIL_FALLBACK_LOCALE
+    logger.debug('send_templated_mail: template_name=%s, locale=%s, recipients=%r, sender=%r, bcc=%r, fail_silently=%r' %
+                 (template_name, locale, recipients, sender, bcc, fail_silently))
 
     try:
         t = EmailTemplate.objects.get(template_name__iexact=template_name, locale=locale)
